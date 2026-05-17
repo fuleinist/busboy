@@ -867,6 +867,46 @@ const tests = [
     ],
     what: 'Empty part'
   },
+  { source: [
+      ['-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+       'Content-Disposition: form-data; name="file_name_0"',
+       '',
+       'super alpha file',
+       '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+       'Content-Disposition: form-data; '
+         + 'name="upload_file_0"; filename="1k_a.dat"',
+       'Content-Type: application/octet-stream',
+       '',
+       'A'.repeat(1023),
+       '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--'
+      ].join('\r\n')
+    ],
+    boundary: '---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+    expected: [
+      { type: 'field',
+        name: 'file',
+        val: 'super alpha file',
+        info: {
+          nameTruncated: true,
+          valueTruncated: false,
+          encoding: '7bit',
+          mimeType: 'text/plain',
+        },
+      },
+      { type: 'file',
+        name: 'uplo',
+        data: Buffer.from('A'.repeat(1023)),
+        info: {
+          filename: '1k_a.dat',
+          encoding: '7bit',
+          mimeType: 'application/octet-stream',
+        },
+        limited: false,
+      },
+    ],
+    limits: { fieldNameSize: 4 },
+    what: 'Limits: truncated field name (multipart)'
+  },
 ];
 
 for (const test of tests) {
