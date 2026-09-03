@@ -907,16 +907,94 @@ const tests = [
     limits: { fieldNameSize: 4 },
     what: 'Limits: truncated field name (multipart)'
   },
+  { source: [
+      ['-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+       'Content-Disposition: form-data; name="\u00e9\u00e9"',
+       '',
+       'alpha',
+       '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--'
+      ].join('\r\n')
+    ],
+    boundary: '---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+    defParamCharset: 'utf8',
+    expected: [
+      { type: 'field',
+        name: '\uFFFD',
+        val: 'alpha',
+        info: {
+          nameTruncated: true,
+          valueTruncated: false,
+          encoding: '7bit',
+          mimeType: 'text/plain',
+        },
+      },
+    ],
+    limits: { fieldNameSize: 1 },
+    what: 'Limits: UTF-8 field name truncated on raw bytes (limit 1)'
+  },
+  { source: [
+      ['-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+       'Content-Disposition: form-data; name="\u00e9\u00e9"',
+       '',
+       'alpha',
+       '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--'
+      ].join('\r\n')
+    ],
+    boundary: '---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+    defParamCharset: 'utf8',
+    expected: [
+      { type: 'field',
+        name: '\u00e9\uFFFD',
+        val: 'alpha',
+        info: {
+          nameTruncated: true,
+          valueTruncated: false,
+          encoding: '7bit',
+          mimeType: 'text/plain',
+        },
+      },
+    ],
+    limits: { fieldNameSize: 3 },
+    what: 'Limits: UTF-8 field name truncated on raw bytes (limit 3)'
+  },
+  { source: [
+      ['-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+       'Content-Disposition: form-data; name="\u00e9\u00e9"',
+       '',
+       'alpha',
+       '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--'
+      ].join('\r\n')
+    ],
+    boundary: '---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+    defParamCharset: 'utf8',
+    expected: [
+      { type: 'field',
+        name: '\u00e9\u00e9',
+        val: 'alpha',
+        info: {
+          nameTruncated: false,
+          valueTruncated: false,
+          encoding: '7bit',
+          mimeType: 'text/plain',
+        },
+      },
+    ],
+    limits: { fieldNameSize: 4 },
+    what: 'Limits: UTF-8 field name at exact byte size (limit 4)'
+  },
 ];
 
 for (const test of tests) {
   active.set(test, 1);
 
-  const { what, boundary, events, limits, preservePath, fileHwm } = test;
+  const {
+    what, boundary, events, limits, preservePath, fileHwm, defParamCharset,
+  } = test;
   const bb = busboy({
     fileHwm,
     limits,
     preservePath,
+    defParamCharset,
     headers: {
       'content-type': `multipart/form-data; boundary=${boundary}`,
     }
@@ -996,11 +1074,14 @@ for (let test of tests) {
   test.what += ' (byte-by-byte)';
   active.set(test, 1);
 
-  const { what, boundary, events, limits, preservePath, fileHwm } = test;
+  const {
+    what, boundary, events, limits, preservePath, fileHwm, defParamCharset,
+  } = test;
   const bb = busboy({
     fileHwm,
     limits,
     preservePath,
+    defParamCharset,
     headers: {
       'content-type': `multipart/form-data; boundary=${boundary}`,
     }
